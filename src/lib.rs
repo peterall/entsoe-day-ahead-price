@@ -1,6 +1,4 @@
-use chrono::{Date, DateTime, Duration, TimeZone, Utc};
-use chrono_tz::Tz;
-
+use chrono::{DateTime, Duration, NaiveDate, TimeZone, Utc};
 use rusty_money::MoneyError;
 use serde::{Deserialize, Deserializer};
 use thiserror::Error;
@@ -35,7 +33,7 @@ impl Entsoe {
     pub async fn get_day_ahead_prices(
         &self,
         area: &str,
-        date: Date<Tz>,
+        date: NaiveDate,
     ) -> Result<Vec<Price>, GetPriceError> {
         let security_token = &self.security_token;
         let domain = Self::get_domain(area)?;
@@ -55,7 +53,7 @@ impl Entsoe {
             serde_xml_rs::from_str(&reqwest::get(url).await?.text().await?)?;
 
         let currency = rusty_money::iso::find(&ts.currency)
-            .ok_or_else(|| GetPriceError::UnknownCurrency(ts.currency))?;
+            .ok_or(GetPriceError::UnknownCurrency(ts.currency))?;
 
         if ts.period.resolution != "PT60M" {
             Err(GetPriceError::UnknownResolution(ts.period.resolution))
@@ -140,7 +138,7 @@ pub struct Price {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
+    use chrono::NaiveDate;
     use chrono_tz::Europe::Stockholm;
     use std::fs;
 
@@ -148,7 +146,7 @@ mod tests {
     async fn get_day_ahead_prices() {
         let entsoe = Entsoe::new(&fs::read_to_string("security_token").unwrap());
         let prices = entsoe
-            .get_day_ahead_prices("SE3", Stockholm.ymd(2022, 11, 9))
+            .get_day_ahead_prices("SE3", NaiveDate::from_ymd(2022, 11, 9))
             .await
             .unwrap();
 
