@@ -7,7 +7,7 @@ Note that a security token is required which can be requested from ENTSO-E [here
 ```rust
 let entsoe = Entsoe::new("my-security-token");
 let prices = entsoe
-    .get_day_ahead_prices("SE3", Stockholm.ymd(2022, 11, 9))
+    .get_day_ahead_prices("SE3", NaiveDate::from_ymd(2022, 11, 9))
     .await
     .unwrap();
 
